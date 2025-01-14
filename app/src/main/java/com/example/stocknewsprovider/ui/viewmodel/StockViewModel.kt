@@ -1,33 +1,52 @@
+// ui/viewmodel/StockViewModel.kt
 package com.example.stocknewsprovider.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.example.stocknewsprovider.data.model.AccountInfo
-import com.example.stocknewsprovider.data.repository.StockRepository
+import com.example.stocknewsprovider.data.dao.StockDao
+import com.example.stocknewsprovider.data.entity.StockEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-// 5. ViewModel 생성
-class StockViewModel(private val repository: StockRepository) : ViewModel() {
-    private val _accountInfo = MutableStateFlow<AccountInfo?>(null)
-    val accountInfo: StateFlow<AccountInfo?> = _accountInfo.asStateFlow()
+// ui/viewmodel/StockViewModel.kt
+class StockViewModel(private val stockDao: StockDao) : ViewModel() {
+    private val _searchResults = MutableStateFlow<List<StockEntity>>(emptyList())
+    val searchResults: StateFlow<List<StockEntity>> = _searchResults
+
+    private val _selectedStocks = MutableStateFlow<List<StockEntity>>(emptyList())
+    val selectedStocks: StateFlow<List<StockEntity>> = _selectedStocks
 
     private val _isLoading = MutableStateFlow(false)
-    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+    val isLoading: StateFlow<Boolean> = _isLoading
 
-    fun getAccountInfo(credentials: Map<String, String>) {
+    fun searchStocks(market: String, query: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                val result = repository.getAccountInfo(credentials)
-                _accountInfo.value = result
-            } catch (e: Exception) {
-                // 에러 처리
+                _searchResults.value = if (query.isBlank()) {
+                    stockDao.getStocksByMarket(market)
+                } else {
+                    stockDao.searchStocks(market, query)
+                }
             } finally {
                 _isLoading.value = false
             }
         }
+    }
+
+    fun addStockToPortfolio(stock: StockEntity) {
+        val currentList = _selectedStocks.value.toMutableList()
+        if (!currentList.contains(stock)) {
+            currentList.add(stock)
+            _selectedStocks.value = currentList
+        }
+    }
+
+    fun removeStockFromPortfolio(stock: StockEntity) {
+        val currentList = _selectedStocks.value.toMutableList()
+        currentList.remove(stock)
+        _selectedStocks.value = currentList
     }
 }

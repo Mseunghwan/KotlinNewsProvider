@@ -24,7 +24,6 @@ fun AccountInfoScreen(
     navController: NavController,
     viewModel: StockViewModel
 ) {
-    val accountInfo by viewModel.accountInfo.collectAsState(initial = null)
     val isLoading by viewModel.isLoading.collectAsState(initial = false)
 
     Column(
@@ -48,13 +47,6 @@ fun AccountInfoScreen(
                 modifier = Modifier.align(Alignment.CenterHorizontally)
             )
         } else {
-            accountInfo?.let { info ->
-                LazyColumn {
-                    items(info.stockHoldings) { holding ->
-                        StockHoldingItem(holding)
-                    }
-                }
-            }
         }
     }
 }
