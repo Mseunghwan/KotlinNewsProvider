@@ -25,33 +25,34 @@ fun StockSearchDialog(
     viewModel: StockViewModel
 ) {
     var searchQuery by remember { mutableStateOf("") }
-    var selectedMarket by remember { mutableStateOf<String?>(null) }
-    val stocks by viewModel.searchResults.collectAsState()
+    var selectedMarket by remember { mutableStateOf("ALL") }
+    val searchResults by viewModel.searchResults.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        modifier = Modifier.fillMaxHeight(0.9f),
         title = { Text("주식 검색") },
         text = {
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp)
             ) {
-                // Market Selection Chips
+                // 마켓 선택 칩
                 Row(
                     modifier = Modifier
                         .horizontalScroll(rememberScrollState())
-                        .padding(vertical = 8.dp)
+                        .padding(bottom = 8.dp)
                 ) {
                     FilterChip(
-                        selected = selectedMarket == null,
+                        selected = selectedMarket == "ALL",
                         onClick = {
-                            selectedMarket = null
+                            selectedMarket = "ALL"
                             viewModel.searchStocks(null, searchQuery)
                         },
                         label = { Text("전체") }
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     listOf("KOSPI", "NASDAQ", "NYSE").forEach { market ->
                         FilterChip(
                             selected = selectedMarket == market,
@@ -61,33 +62,36 @@ fun StockSearchDialog(
                             },
                             label = { Text(market) }
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                     }
                 }
 
-                // Search TextField with auto-complete
+                // 검색창
                 OutlinedTextField(
                     value = searchQuery,
-                    onValueChange = { query ->
-                        searchQuery = query
-                        viewModel.searchStocks(selectedMarket, query)
+                    onValueChange = { newQuery ->
+                        searchQuery = newQuery
+                        viewModel.searchStocks(selectedMarket, newQuery)
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    placeholder = { Text("종목명 또는 심볼을 입력하세요") },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("종목명 또는 심볼 입력") },
+                    singleLine = true,
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) }
                 )
 
-                // Search Results
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // 검색 결과 또는 로딩 표시
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.CenterHorizontally)
                     )
                 } else {
-                    LazyColumn {
-                        items(stocks) { stock ->
-                            StockSearchItem(
+                    LazyColumn(
+                        modifier = Modifier.height(400.dp)
+                    ) {
+                        items(searchResults) { stock ->
+                            StockSearchResultItem(
                                 stock = stock,
                                 onClick = {
                                     onStockSelected(stock)
@@ -108,39 +112,31 @@ fun StockSearchDialog(
 }
 
 @Composable
-private fun StockSearchItem(
+private fun StockSearchResultItem(
     stock: StockEntity,
     onClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
             .padding(vertical = 4.dp)
+            .clickable(onClick = onClick)
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = stock.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = stock.symbol,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.secondary
-                )
-            }
+            Text(
+                text = stock.name,
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "${stock.market} | ${stock.symbol}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             stock.sector?.let { sector ->
                 Text(
-                    text = "${stock.market} | $sector",
+                    text = sector,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

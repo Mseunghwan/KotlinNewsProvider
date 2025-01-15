@@ -1,4 +1,3 @@
-
 package com.example.stocknewsprovider
 
 import android.os.Bundle

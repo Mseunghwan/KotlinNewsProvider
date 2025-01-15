@@ -1,14 +1,13 @@
-// 4. data/database/AppDatabase.kt
 package com.example.stocknewsprovider.data.database
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.stocknewsprovider.data.entity.StockEntity
 import com.example.stocknewsprovider.data.dao.StockDao
+import com.example.stocknewsprovider.data.entity.StockEntity
 
-@Database(entities = [StockEntity::class], version = 1)
+@Database(entities = [StockEntity::class], version = 2)  // 버전 2로 업데이트
 abstract class AppDatabase : RoomDatabase() {
     abstract fun stockDao(): StockDao
 
@@ -22,7 +21,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "stock_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()  // 기존 데이터 삭제하고 새로 시작
+                    .build()
                 INSTANCE = instance
                 instance
             }

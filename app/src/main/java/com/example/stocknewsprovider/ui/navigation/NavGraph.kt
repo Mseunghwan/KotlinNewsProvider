@@ -1,8 +1,10 @@
 // ui/navigation/NavGraph.kt
 package com.example.stocknewsprovider.ui.navigation
 
+import android.app.Application
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -11,21 +13,20 @@ import com.example.stocknewsprovider.data.database.AppDatabase
 import com.example.stocknewsprovider.ui.screens.BrokerSelectionScreen
 import com.example.stocknewsprovider.ui.screens.AccountInfoScreen
 import com.example.stocknewsprovider.ui.viewmodel.StockViewModel
-import com.example.stocknewsprovider.ui.viewmodel.StockViewModelFactory
 
 @Composable
 fun NavGraph() {
     val navController = rememberNavController()
     val context = LocalContext.current
-    val stockDao = AppDatabase.getDatabase(context).stockDao()
-    val factory = StockViewModelFactory(stockDao)
-    val viewModel: StockViewModel = viewModel(factory = factory)
+    val viewModel: StockViewModel = viewModel(
+        factory = ViewModelProvider.AndroidViewModelFactory.getInstance(context.applicationContext as Application)
+    )
 
     NavHost(navController = navController, startDestination = "broker_selection") {
         composable("broker_selection") {
             BrokerSelectionScreen(
                 navController = navController,
-                viewModel = viewModel  // ViewModel 전달
+                viewModel = viewModel
             )
         }
         composable("account_info") {
