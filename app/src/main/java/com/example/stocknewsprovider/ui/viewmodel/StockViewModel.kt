@@ -8,9 +8,11 @@ import com.example.stocknewsprovider.data.dao.StockDao
 import com.example.stocknewsprovider.data.entity.StockEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 // ui/viewmodel/StockViewModel.kt
+
 class StockViewModel(private val stockDao: StockDao) : ViewModel() {
     private val _searchResults = MutableStateFlow<List<StockEntity>>(emptyList())
     val searchResults: StateFlow<List<StockEntity>> = _searchResults
@@ -21,15 +23,16 @@ class StockViewModel(private val stockDao: StockDao) : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    fun searchStocks(market: String, query: String) {
+    fun searchStocks(market: String?, query: String) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                _searchResults.value = if (query.isBlank()) {
-                    stockDao.getStocksByMarket(market)
+                val results = if (market != null) {
+                    stockDao.searchStocksByMarket(market, query)
                 } else {
-                    stockDao.searchStocks(market, query)
-                }
+                    stockDao.searchAllStocks(query)
+                }.first()  // Flow를 일회성 List로 변환
+                _searchResults.value = results
             } finally {
                 _isLoading.value = false
             }

@@ -7,15 +7,8 @@ import com.example.stocknewsprovider.data.entity.StockEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-
-
-// assets/stocks.csv 파일 예시:
-/*
-symbol,name,market,sector,currency
-005930,삼성전자,KOSPI,전자,KRW
-373220,LG에너지솔루션,KOSPI,전자,KRW
-...
-*/
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 class StockApplication : Application() {
     private val applicationScope = CoroutineScope(Dispatchers.IO)
@@ -31,24 +24,35 @@ class StockApplication : Application() {
     private suspend fun loadInitialData() {
         val stockDao = database.stockDao()
         if (stockDao.getStockCount() == 0) {
-            try {
-                assets.open("stocks.csv").bufferedReader().use { reader ->
-                    // 헤더 건너뛰기
-                    reader.readLine()
+            val markets = listOf("KOSPI", "NASDAQ", "NYSE")
+            markets.forEach { market ->
+                try {
+                    assets.open("$market.csv").use { inputStream ->
+                        val reader = BufferedReader(InputStreamReader(inputStream))
+                        // 헤더 건너뛰기
+                        reader.readLine()
 
-                    // 데이터 읽기
-                    val stocks = reader.lineSequence()
-                        .filter { it.isNotBlank() }
-                        .map { line ->
-                            val (symbol, name, sector, industry) = line.split(",")
-                            StockEntity(symbol, name, sector, industry)
-                        }
-                        .toList()
+                        val stocks = reader.lineSequence()
+                            .filter { it.isNotBlank() }
+                            .map { line ->
+                                val parts = line.split(",").map { it.trim() }
+                                StockEntity(
+                                    symbol = parts[0],
+                                    name = parts[1],
+                                    sector = parts[2].takeIf { it != "null" && it.isNotBlank() },
+                                    industry = parts[3].takeIf { it != "null" && it.isNotBlank() },
+                                    market = market
+                                )
+                            }
+                            .toList()
 
-                    stockDao.insertAll(stocks)
+                        stockDao.insertAll(stocks)
+                        Log.d("StockApplication", "Loaded ${stocks.size} stocks for $market")
+                    }
+                } catch (e: Exception) {
+                    Log.e("StockApplication", "Error loading $market data", e)
+                    e.printStackTrace()  // 상세 에러 로그
                 }
-            } catch (e: Exception) {
-                Log.e("StockApplication", "Error loading initial data", e)
             }
         }
     }

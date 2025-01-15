@@ -13,7 +13,6 @@ import com.example.stocknewsprovider.ui.screens.AccountInfoScreen
 import com.example.stocknewsprovider.ui.viewmodel.StockViewModel
 import com.example.stocknewsprovider.ui.viewmodel.StockViewModelFactory
 
-// NavGraph.kt 수정
 @Composable
 fun NavGraph() {
     val navController = rememberNavController()
@@ -24,7 +23,10 @@ fun NavGraph() {
 
     NavHost(navController = navController, startDestination = "broker_selection") {
         composable("broker_selection") {
-            BrokerSelectionScreen(navController)
+            BrokerSelectionScreen(
+                navController = navController,
+                viewModel = viewModel  // ViewModel 전달
+            )
         }
         composable("account_info") {
             AccountInfoScreen(
